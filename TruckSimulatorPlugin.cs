@@ -21,6 +21,7 @@ namespace sjdawson.TruckSimulatorPlugin
             {
                 if (data.OldData != null && data.NewData != null)
                 {
+                    pluginManager.SetPropertyValue("Job.NextRestWarning", this.GetType(), this.NextRestWarning(pluginManager));
                     pluginManager.SetPropertyValue("Job.OverSpeedLimit", this.GetType(), this.OverSpeedLimit(pluginManager, Settings.OverSpeedMargin));
                     pluginManager.SetPropertyValue("Job.OverSpeedLimitPercentage", this.GetType(), this.OverSpeedLimitPercentage(pluginManager));
                     pluginManager.SetPropertyValue("Drivetrain.EcoRange", this.GetType(), this.EcoRange(data.NewData.Rpms));
@@ -109,6 +110,18 @@ namespace sjdawson.TruckSimulatorPlugin
         }
 
         /// <summary>
+        /// Indicates whether you have less than an "hour" remaining before you need to rest.
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        /// <returns>bool</returns>
+        public bool NextRestWarning(PluginManager pluginManager)
+        {
+            TimeSpan nextRest = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.NextRestStopTime");
+
+            return nextRest.Hours < 1;
+        }
+
+        /// <summary>
         /// Calculate the percentage of `input` based against `min` and `max` values
         /// being 0-1 respectively.
         /// </summary>
@@ -143,7 +156,8 @@ namespace sjdawson.TruckSimulatorPlugin
         public void Init(PluginManager pluginManager)
         {
             Settings = this.ReadCommonSettings<TruckSimulatorPluginSettings>("TruckSimulatorPluginSettings", () => new TruckSimulatorPluginSettings());
-    
+
+            pluginManager.AddProperty("Job.NextRestWarning", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimit", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimitPercentage", this.GetType(), 0);
 
@@ -157,7 +171,7 @@ namespace sjdawson.TruckSimulatorPlugin
             pluginManager.AddAction("SwitchDisplayUnit", this.GetType(), (a, b) =>
             {
                 pluginManager.SetPropertyValue("Dash.DisplayUnitMetric", this.GetType(),
-                    !(bool) pluginManager.GetPropertyValue("TruckSimulatorPlugin.Dash.DisplayUnitMetric")
+                    !(bool)pluginManager.GetPropertyValue("TruckSimulatorPlugin.Dash.DisplayUnitMetric")
                 );
             });
         }
