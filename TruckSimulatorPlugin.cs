@@ -97,16 +97,35 @@ namespace sjdawson.TruckSimulatorPlugin
             return (totalWear / 6) * 100;
         }
 
+        public DateTime HazardLightsOnAt;
+        public bool HazardLightsOn = false;
+
         /// <summary>
-        /// If both blinkers are 'active', then the hazards are on. This is a shortcut
+        /// If both blinkers are 'on', then the hazards are on. This is a shortcut
         /// to having to check both properties manually.
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns>bool</returns>
         public bool HazardWarningLightsActive(PluginManager pluginManager)
         {
-            return (bool)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Lights.BlinkerLeftActive") &&
-                (bool)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Lights.BlinkerRightActive");
+            DateTime now = DateTime.Now;
+
+            bool switchedOn = (bool)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Lights.BlinkerLeftOn") &&
+                (bool)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Lights.BlinkerRightOn");
+
+            if (switchedOn)
+            {
+                this.HazardLightsOnAt = now;
+                this.HazardLightsOn = true;
+            }
+            
+            // If the lights are off longer than 1s after being "on", they've been turned off
+            if (switchedOn == false && now > this.HazardLightsOnAt.AddSeconds(1))
+            {
+                this.HazardLightsOn = false;
+            }           
+
+            return this.HazardLightsOn;
         }
 
         /// <summary>
