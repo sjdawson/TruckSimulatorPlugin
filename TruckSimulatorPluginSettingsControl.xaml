@@ -8,7 +8,7 @@
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
              xmlns:Custom="http://metro.mahapps.com/winfx/xaml/controls"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" Loaded="UserControl_Loaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="46"/>
@@ -17,7 +17,7 @@
             <ColumnDefinition/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBlock HorizontalAlignment="Left" Height="15" Margin="10" Text="Over speed margin" />
-        <Custom:NumericUpDown x:Name="OverSpeedMargin" Margin="10" ValueChanged="OverSpeedMarginChanged" Grid.Column="1" Minimum="-10" Maximum="10"/>
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Over speed margin" />
+        <Custom:NumericUpDown x:Name="OverSpeedMargin" HasDecimals="False" Margin="10" ValueChanged="OverSpeedMarginChanged" Grid.Column="1" Minimum="-10" Maximum="10"/>
     </Grid>
 </UserControl>

@@ -9,10 +9,10 @@ namespace sjdawson.TruckSimulatorPlugin
     public partial class TruckSimulatorPluginSettingsControl : UserControl
     {
         public TruckSimulatorPlugin Plugin { get; }
+
         public TruckSimulatorPluginSettingsControl()
         {
             InitializeComponent();
-            OverSpeedMargin.Value = 5;
         }
 
         public TruckSimulatorPluginSettingsControl(TruckSimulatorPlugin plugin) : this()
@@ -22,7 +22,12 @@ namespace sjdawson.TruckSimulatorPlugin
 
         public void OverSpeedMarginChanged(object sender, RoutedPropertyChangedEventArgs<double?> e)
         {
-            this.Plugin.PluginManager.TriggerAction("Modify");
+            Plugin.Settings.OverSpeedMargin = (int)OverSpeedMargin.Value;
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            OverSpeedMargin.Value = Plugin.Settings.OverSpeedMargin;
         }
     }
 }

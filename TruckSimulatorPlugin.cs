@@ -1,4 +1,4 @@
-﻿using GameReaderCommon;
+using GameReaderCommon;
 using SimHub.Plugins;
 using System;
 
@@ -23,7 +23,7 @@ namespace sjdawson.TruckSimulatorPlugin
                 {
                     pluginManager.SetPropertyValue("Job.NextRestWarning", this.GetType(), this.NextRestWarning(pluginManager));
                     pluginManager.SetPropertyValue("Job.OverSpeedLimit", this.GetType(), this.OverSpeedLimit(pluginManager, Settings.OverSpeedMargin));
-                    pluginManager.SetPropertyValue("Job.OverSpeedLimitPercentage", this.GetType(), this.OverSpeedLimitPercentage(pluginManager));
+                    pluginManager.SetPropertyValue("Job.OverSpeedLimitPercentage", this.GetType(), this.OverSpeedLimitPercentage(pluginManager, Settings.OverSpeedMargin));
                     pluginManager.SetPropertyValue("Drivetrain.EcoRange", this.GetType(), this.EcoRange(data.NewData.Rpms));
 
                     float wearAverage = this.WearAverage(pluginManager);
@@ -52,18 +52,18 @@ namespace sjdawson.TruckSimulatorPlugin
 
         /// <summary>
         /// When you're over the speed limit, this will return a percentage value indicating
-        /// how far over you are, taking current speed limit plus 2 as 100% over.
+        /// how far over you are, taking current speed limit plus over speed margin as 100% over.
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns>float</returns>
-        public float OverSpeedLimitPercentage(PluginManager pluginManager)
+        public float OverSpeedLimitPercentage(PluginManager pluginManager, int overSpeedMargin)
         {
             float speedLimit = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.SpeedLimitMph");
             float currentSpeed = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Drivetrain.SpeedMph");
 
             if (speedLimit > 0)
             {
-                return this.InputAsPercentageOfRange(currentSpeed, speedLimit, speedLimit + 2);
+                return this.InputAsPercentageOfRange(currentSpeed, speedLimit, speedLimit + overSpeedMargin);
             }
 
             return 0;
@@ -168,7 +168,7 @@ namespace sjdawson.TruckSimulatorPlugin
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
         {
             /// @todo Make the settings configurable
-            return null; // new TruckSimulatorPluginSettingsControl(this);
+            return new TruckSimulatorPluginSettingsControl(this);
         }
 
         /// <param name="pluginManager"></param>

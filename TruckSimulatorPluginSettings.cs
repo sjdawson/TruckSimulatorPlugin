@@ -8,7 +8,7 @@ namespace sjdawson.TruckSimulatorPlugin
 {
     public class TruckSimulatorPluginSettings
     {
-        public int OverSpeedMargin = 1;
+        public int OverSpeedMargin = 3;
         public double WearWarning = 5.0;
     }
 }
