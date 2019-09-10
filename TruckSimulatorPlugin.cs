@@ -1,4 +1,4 @@
-using GameReaderCommon;
+﻿using GameReaderCommon;
 using SimHub.Plugins;
 using System;
 
@@ -24,6 +24,11 @@ namespace sjdawson.TruckSimulatorPlugin
                     pluginManager.SetPropertyValue("Job.NextRestWarning", this.GetType(), this.NextRestWarning(pluginManager));
                     pluginManager.SetPropertyValue("Job.OverSpeedLimit", this.GetType(), this.OverSpeedLimit(pluginManager, Settings.OverSpeedMargin));
                     pluginManager.SetPropertyValue("Job.OverSpeedLimitPercentage", this.GetType(), this.OverSpeedLimitPercentage(pluginManager, Settings.OverSpeedMargin));
+
+                    pluginManager.SetPropertyValue("Navigation.TotalDaysLeft", this.GetType(), this.NavigationDaysLeft(pluginManager));
+                    pluginManager.SetPropertyValue("Navigation.TotalHoursLeft", this.GetType(), this.NavigationHoursLeft(pluginManager));
+                    pluginManager.SetPropertyValue("Navigation.Minutes", this.GetType(), this.NavigationMinutes(pluginManager));
+
                     pluginManager.SetPropertyValue("Drivetrain.EcoRange", this.GetType(), this.EcoRange(data.NewData.Rpms));
 
                     float wearAverage = this.WearAverage(pluginManager);
@@ -78,6 +83,42 @@ namespace sjdawson.TruckSimulatorPlugin
         {
             /// This may need tweaking, based on different trucks.
             return rpms > 1000 && rpms < 1800;
+        }
+
+        /// <summary>
+        /// Return the total number of days remaining in navigation time
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        /// <returns>int</returns>
+        public int NavigationDaysLeft(PluginManager pluginManager)
+        {
+            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
+
+            return (int)timeLeft.TotalDays;
+        }
+
+        /// <summary>
+        /// Return the total number of hours remaining in navigation time
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        /// <returns>int</returns>
+        public int NavigationHoursLeft(PluginManager pluginManager)
+        { 
+            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
+
+            return (int)timeLeft.TotalHours;
+        }
+
+        /// <summary>
+        /// Return the minutes component from navigation time
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        /// <returns>int</returns>
+        public int NavigationMinutes(PluginManager pluginManager)
+        { 
+            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
+
+            return (int)timeLeft.Minutes;
         }
 
         /// <summary>
@@ -176,16 +217,24 @@ namespace sjdawson.TruckSimulatorPlugin
         {
             Settings = this.ReadCommonSettings<TruckSimulatorPluginSettings>("TruckSimulatorPluginSettings", () => new TruckSimulatorPluginSettings());
 
+            // Additional job information
             pluginManager.AddProperty("Job.NextRestWarning", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimit", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimitPercentage", this.GetType(), 0);
+            
+            // Additional navigation information
+            pluginManager.AddProperty("Navigation.TotalDaysLeft", this.GetType(), false);
+            pluginManager.AddProperty("Navigation.TotalHoursLeft", this.GetType(), false);
+            pluginManager.AddProperty("Navigation.Minutes", this.GetType(), false);
 
+            // Additional truck information
             pluginManager.AddProperty("Drivetrain.EcoRange", this.GetType(), false);
             pluginManager.AddProperty("Damage.WearAverage", this.GetType(), 0);
             pluginManager.AddProperty("Damage.WearWarning", this.GetType(), false);
             pluginManager.AddProperty("Lights.HazardWarningActive", this.GetType(), false);
 
-            pluginManager.AddProperty("Dash.DisplayUnitMetric", this.GetType(), false);
+            // Plugin information
+            pluginManager.AddProperty("Dash.DisplayUnitMetric", this.GetType(), false);            
 
             pluginManager.AddAction("SwitchDisplayUnit", this.GetType(), (a, b) =>
             {
