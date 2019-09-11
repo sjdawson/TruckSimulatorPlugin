@@ -1,16 +1,17 @@
 ﻿<UserControl x:Class="sjdawson.TruckSimulatorPlugin.TruckSimulatorPluginSettingsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:sjdawson.TruckSimulatorPlugin"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
-             xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
+             xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins"
              xmlns:Custom="http://metro.mahapps.com/winfx/xaml/controls"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800" Loaded="UserControl_Loaded">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="46"/>
             <RowDefinition Height="46"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -19,5 +20,7 @@
         </Grid.ColumnDefinitions>
         <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Over speed margin" />
         <Custom:NumericUpDown x:Name="OverSpeedMargin" HasDecimals="False" Margin="10" ValueChanged="OverSpeedMarginChanged" Grid.Column="1" Minimum="-10" Maximum="10"/>
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Display dash units in metric?" Grid.Row="1" />
+        <CheckBox x:Name="DashUnitMetric" Click="DashSpeedUnitMetric_Click" Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="10" Grid.Row="1" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>

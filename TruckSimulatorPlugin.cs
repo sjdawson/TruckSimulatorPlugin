@@ -1,4 +1,4 @@
-using GameReaderCommon;
+﻿using GameReaderCommon;
 using SimHub.Plugins;
 using System;
 
@@ -38,6 +38,8 @@ namespace sjdawson.TruckSimulatorPlugin
                     pluginManager.SetPropertyValue("Lights.HazardWarningActive", this.GetType(), this.HazardWarningLightsActive(pluginManager));
                 }
             }
+
+            pluginManager.SetPropertyValue("Dash.DisplayUnitMetric", this.GetType(), Settings.DashUnitMetric);
         }
 
         /// <summary>
@@ -103,7 +105,7 @@ namespace sjdawson.TruckSimulatorPlugin
         /// <param name="pluginManager"></param>
         /// <returns>int</returns>
         public int NavigationHoursLeft(PluginManager pluginManager)
-        { 
+        {
             TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
 
             return (int)timeLeft.TotalHours;
@@ -115,7 +117,7 @@ namespace sjdawson.TruckSimulatorPlugin
         /// <param name="pluginManager"></param>
         /// <returns>int</returns>
         public int NavigationMinutes(PluginManager pluginManager)
-        { 
+        {
             TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
 
             return (int)timeLeft.Minutes;
@@ -159,12 +161,12 @@ namespace sjdawson.TruckSimulatorPlugin
                 this.HazardLightsOnAt = now;
                 this.HazardLightsOn = true;
             }
-            
+
             // If the lights are off longer than 1s after being "on", they've been turned off
             if (switchedOn == false && now > this.HazardLightsOnAt.AddSeconds(1))
             {
                 this.HazardLightsOn = false;
-            }           
+            }
 
             return this.HazardLightsOn;
         }
@@ -221,7 +223,7 @@ namespace sjdawson.TruckSimulatorPlugin
             pluginManager.AddProperty("Job.NextRestWarning", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimit", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimitPercentage", this.GetType(), 0);
-            
+
             // Additional navigation information
             pluginManager.AddProperty("Navigation.TotalDaysLeft", this.GetType(), false);
             pluginManager.AddProperty("Navigation.TotalHoursLeft", this.GetType(), false);
@@ -234,13 +236,11 @@ namespace sjdawson.TruckSimulatorPlugin
             pluginManager.AddProperty("Lights.HazardWarningActive", this.GetType(), false);
 
             // Plugin information
-            pluginManager.AddProperty("Dash.DisplayUnitMetric", this.GetType(), false);            
+            pluginManager.AddProperty("Dash.DisplayUnitMetric", this.GetType(), false);
 
             pluginManager.AddAction("SwitchDisplayUnit", this.GetType(), (a, b) =>
             {
-                pluginManager.SetPropertyValue("Dash.DisplayUnitMetric", this.GetType(),
-                    !(bool)pluginManager.GetPropertyValue("TruckSimulatorPlugin.Dash.DisplayUnitMetric")
-                );
+                Settings.DashUnitMetric = !(bool)Settings.DashUnitMetric;
             });
         }
     }

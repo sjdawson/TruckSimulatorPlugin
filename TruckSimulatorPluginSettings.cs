@@ -10,5 +10,6 @@ namespace sjdawson.TruckSimulatorPlugin
     {
         public int OverSpeedMargin = 3;
         public double WearWarning = 5.0;
+        public bool DashUnitMetric = false;
     }
 }
