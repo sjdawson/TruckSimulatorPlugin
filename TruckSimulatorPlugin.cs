@@ -1,10 +1,10 @@
-﻿using GameReaderCommon;
+using GameReaderCommon;
 using SimHub.Plugins;
 using System;
 
 namespace sjdawson.TruckSimulatorPlugin
 {
-    [PluginDescription("Additional properties, actions and events for use in truck simulators, ETS and ATS.")]
+    [PluginDescription("Additional properties, actions and events for use in truck simulators, ETS2 and ATS.")]
     [PluginAuthor("sjdawson")]
     [PluginName("Truck Simulator Plugin")]
 
@@ -42,7 +42,7 @@ namespace sjdawson.TruckSimulatorPlugin
 
         /// <summary>
         /// Indicates whether you're currently speeding considering the current limit set on the road.
-        /// Only works when the limit is set above zero.
+        /// Only works when the limit is greater than zero.
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <param name="overSpeedMargin"></param>
@@ -52,7 +52,7 @@ namespace sjdawson.TruckSimulatorPlugin
             float speedLimit = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.SpeedLimitMph");
             float currentSpeed = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Drivetrain.SpeedMph");
 
-            return speedLimit > 0 && currentSpeed > speedLimit + overSpeedMargin;
+            return speedLimit > 0 && currentSpeed > (speedLimit + overSpeedMargin);
         }
 
         /// <summary>
