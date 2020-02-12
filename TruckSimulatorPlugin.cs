@@ -25,9 +25,15 @@ namespace sjdawson.TruckSimulatorPlugin
                     pluginManager.SetPropertyValue("Job.OverSpeedLimit", this.GetType(), this.OverSpeedLimit(pluginManager, Settings.OverSpeedMargin));
                     pluginManager.SetPropertyValue("Job.OverSpeedLimitPercentage", this.GetType(), this.OverSpeedLimitPercentage(pluginManager, Settings.OverSpeedMargin));
 
-                    pluginManager.SetPropertyValue("Navigation.TotalDaysLeft", this.GetType(), this.NavigationDaysLeft(pluginManager));
-                    pluginManager.SetPropertyValue("Navigation.TotalHoursLeft", this.GetType(), this.NavigationHoursLeft(pluginManager));
-                    pluginManager.SetPropertyValue("Navigation.Minutes", this.GetType(), this.NavigationMinutes(pluginManager));
+                    pluginManager.SetPropertyValue("Job.InProgress", this.GetType(), this.JobInProgress(pluginManager));
+
+                    pluginManager.SetPropertyValue("Job.TotalDaysLeft", this.GetType(), this.DaysLeft(pluginManager, "DataCorePlugin.GameRawData.Job.RemainingTime"));
+                    pluginManager.SetPropertyValue("Job.TotalHoursLeft", this.GetType(), this.HoursLeft(pluginManager, "DataCorePlugin.GameRawData.Job.RemainingTime"));
+                    pluginManager.SetPropertyValue("Job.Minutes", this.GetType(), this.Minutes(pluginManager, "DataCorePlugin.GameRawData.Job.RemainingTime"));
+
+                    pluginManager.SetPropertyValue("Navigation.TotalDaysLeft", this.GetType(), this.DaysLeft(pluginManager, "DataCorePlugin.GameRawData.Job.NavigationTime"));
+                    pluginManager.SetPropertyValue("Navigation.TotalHoursLeft", this.GetType(), this.HoursLeft(pluginManager, "DataCorePlugin.GameRawData.Job.NavigationTime"));
+                    pluginManager.SetPropertyValue("Navigation.Minutes", this.GetType(), this.Minutes(pluginManager, "DataCorePlugin.GameRawData.Job.NavigationTime"));
 
                     pluginManager.SetPropertyValue("Drivetrain.EcoRange", this.GetType(), this.EcoRange(data.NewData.Rpms));
 
@@ -40,6 +46,77 @@ namespace sjdawson.TruckSimulatorPlugin
             }
 
             pluginManager.SetPropertyValue("Dash.DisplayUnitMetric", this.GetType(), Settings.DashUnitMetric);
+        }
+
+        public string CurrentJobString = "";
+        public bool JobActive = false;
+        public bool SpeedLimitSeen = false;
+        public bool ZeroNavAndDistanceAtSet = false;
+        public DateTime ZeroNavAndDistanceAt;
+
+        public bool JobInProgress(PluginManager pluginManager)
+        {
+            string currentJob = String.Format("{0}__{1}__{2}__{3}__{4}",
+                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.Cargo"),
+                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CompanySource"),
+                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CitySource"),
+                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CompanyDestination"),
+                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CityDestination")
+            ).Replace(" ", "-").Replace("________", "").ToLower();            
+
+            if (currentJob == "")
+            {
+                this.JobActive = false;
+            }
+
+            if (this.CurrentJobString != currentJob)
+            {
+                this.CurrentJobString = currentJob;
+                this.JobActive = true;
+                this.SpeedLimitSeen = false;
+                this.ZeroNavAndDistanceAtSet = false;
+                this.ZeroNavAndDistanceAt = DateTime.Now.AddYears(1); // Force the date out in the future so it'd never be true at job start // Force the date out in the future so it'd never be true at job start
+            }
+
+            if (this.JobActive)
+            {
+                float speedLimit = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.SpeedLimit");
+                float navigationDistanceAndTimeLeft = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationDistanceLeft")
+                    + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTimeLeft");
+
+                if (speedLimit > 0 && !this.SpeedLimitSeen)
+                {
+                    this.SpeedLimitSeen = true;
+                }
+                
+                if (navigationDistanceAndTimeLeft.Equals(0) 
+                    && this.SpeedLimitSeen
+                )
+                {
+                    this.ZeroNavAndDistanceAt = DateTime.Now.AddSeconds(3);
+                    this.ZeroNavAndDistanceAtSet = true;
+                }
+
+                if (navigationDistanceAndTimeLeft.Equals(0) 
+                    && this.ZeroNavAndDistanceAtSet
+                    && DateTime.Now.CompareTo(this.ZeroNavAndDistanceAt) > 0
+                )
+                {
+                    this.JobActive = false;
+                    this.SpeedLimitSeen = false;
+                    this.ZeroNavAndDistanceAtSet = false;
+                    this.ZeroNavAndDistanceAt = DateTime.Now.AddYears(1);
+                }
+                else if (navigationDistanceAndTimeLeft.CompareTo(0) > 0
+                    && this.ZeroNavAndDistanceAtSet
+                )
+                {
+                    this.ZeroNavAndDistanceAt = DateTime.Now.AddYears(1); // Force the date out in the future so it'd never be true during job sat nav fluctuation
+                    this.ZeroNavAndDistanceAtSet = false;
+                }
+            }
+
+            return this.JobActive;
         }
 
         /// <summary>
@@ -88,37 +165,37 @@ namespace sjdawson.TruckSimulatorPlugin
         }
 
         /// <summary>
-        /// Return the total number of days remaining in navigation time
+        /// Return the total number of days remaining from a TimeSpan
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns>int</returns>
-        public int NavigationDaysLeft(PluginManager pluginManager)
+        public int DaysLeft(PluginManager pluginManager, string property)
         {
-            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
+            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue(property);
 
             return (int)timeLeft.TotalDays;
         }
 
         /// <summary>
-        /// Return the total number of hours remaining in navigation time
+        /// Return the total number of hours remaining from a TimeSpan
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns>int</returns>
-        public int NavigationHoursLeft(PluginManager pluginManager)
+        public int HoursLeft(PluginManager pluginManager, string property)
         {
-            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
+            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue(property);
 
             return (int)timeLeft.TotalHours;
         }
 
         /// <summary>
-        /// Return the minutes component from navigation time
+        /// Return the minutes component from a TimeSpan
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns>int</returns>
-        public int NavigationMinutes(PluginManager pluginManager)
+        public int Minutes(PluginManager pluginManager, string property)
         {
-            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTime");
+            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue(property);
 
             return (int)timeLeft.Minutes;
         }
@@ -223,6 +300,12 @@ namespace sjdawson.TruckSimulatorPlugin
             pluginManager.AddProperty("Job.NextRestWarning", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimit", this.GetType(), false);
             pluginManager.AddProperty("Job.OverSpeedLimitPercentage", this.GetType(), 0);
+
+            pluginManager.AddProperty("Job.TotalDaysLeft", this.GetType(), false);
+            pluginManager.AddProperty("Job.TotalHoursLeft", this.GetType(), false);
+            pluginManager.AddProperty("Job.Minutes", this.GetType(), false);
+
+            pluginManager.AddProperty("Job.InProgress", this.GetType(), false);
 
             // Additional navigation information
             pluginManager.AddProperty("Navigation.TotalDaysLeft", this.GetType(), false);
