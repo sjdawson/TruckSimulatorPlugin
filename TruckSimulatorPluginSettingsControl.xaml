@@ -13,6 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="46"/>
             <RowDefinition Height="46"/>
+            <RowDefinition Height="46"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -22,5 +23,7 @@
         <Custom:NumericUpDown x:Name="OverSpeedMargin" HasDecimals="False" Margin="10" ValueChanged="OverSpeedMarginChanged" Grid.Column="1" Minimum="-10" Maximum="10"/>
         <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Display dash units in metric?" Grid.Row="1" />
         <CheckBox x:Name="DashUnitMetric" Click="DashSpeedUnitMetric_Click" Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="10" Grid.Row="1" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Wear warning value" Grid.Row="2" />
+        <Custom:NumericUpDown x:Name="WearWarning" HasDecimals="False" Margin="10" ValueChanged="WearWarningChanged" Grid.Column="1" Grid.Row="2" Minimum="0" Maximum="100"/>
     </Grid>
 </UserControl>

@@ -1,6 +1,7 @@
 ﻿using GameReaderCommon;
 using SimHub.Plugins;
 using System;
+using System.Collections.Generic;
 
 namespace sjdawson.TruckSimulatorPlugin
 {
@@ -13,6 +14,52 @@ namespace sjdawson.TruckSimulatorPlugin
         public TruckSimulatorPluginSettings Settings;
         public PluginManager PluginManager { get; set; }
 
+        /// <summary>
+        /// Initialise the plugin preparing all settings, properties, events and triggers.
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        public void Init(PluginManager pluginManager)
+        {
+            Settings = this.ReadCommonSettings<TruckSimulatorPluginSettings>("TruckSimulatorPluginSettings", () => new TruckSimulatorPluginSettings());
+
+            // Additional properties relating to job attributes
+            AddProp("Job.InProgress", false);
+            AddProp("Job.NextRestWarning", false);
+            AddProp("Job.OverSpeedLimit", false);
+            AddProp("Job.OverSpeedLimitPercentage", 0);
+            AddProp("Job.TotalDaysLeft", 0);
+            AddProp("Job.TotalHoursLeft", 0);
+            AddProp("Job.Minutes", 0);
+
+            // Additional properties relating to navigation attributes
+            AddProp("Navigation.TotalDaysLeft", 0);
+            AddProp("Navigation.TotalHoursLeft", 0);
+            AddProp("Navigation.Minutes", 0);
+
+            // Additional properties relating to vehicle attributes
+            AddProp("Drivetrain.EcoRange", false);
+            AddProp("Damage.WearAverage", 0);
+
+            AddProp("Damage.WearWarning", false);
+
+            AddProp("Lights.HazardWarningOn", false);
+            AddProp("Engine.Starting", false);
+
+            // Additional properties relating to global attributes
+            AddProp("Dash.DisplayUnitMetric", false);
+
+            // Additional actions that can be triggered via input
+            pluginManager.AddAction("SwitchDisplayUnit", this.GetType(), (a, b) =>
+            {
+                Settings.DashUnitMetric = !(bool)Settings.DashUnitMetric;
+            });
+
+            // Additional events triggered via attribues in this plugin
+            AddEvent("JobStarted");
+            AddEvent("JobCompleted");
+            AddEvent("DamageIncrease");
+        }
+
         /// <param name="pluginManager"></param>
         /// <param name="data"></param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
@@ -21,310 +68,271 @@ namespace sjdawson.TruckSimulatorPlugin
             {
                 if (data.OldData != null && data.NewData != null)
                 {
-                    pluginManager.SetPropertyValue("Job.NextRestWarning", this.GetType(), this.NextRestWarning(pluginManager));
-                    pluginManager.SetPropertyValue("Job.OverSpeedLimit", this.GetType(), this.OverSpeedLimit(pluginManager, Settings.OverSpeedMargin));
-                    pluginManager.SetPropertyValue("Job.OverSpeedLimitPercentage", this.GetType(), this.OverSpeedLimitPercentage(pluginManager, Settings.OverSpeedMargin));
+                    SetProp("Job.InProgress", JobInProgress());
+                    SetProp("Job.NextRestWarning", NextRestWarning());
+                    SetProp("Job.OverSpeedLimit", OverSpeedLimit());
+                    SetProp("Job.OverSpeedLimitPercentage", OverSpeedLimitPercentage());
+                    SetProp("Job.TotalDaysLeft", TotalDays("DataCorePlugin.GameRawData.Job.RemainingTime"));
+                    SetProp("Job.TotalHoursLeft", TotalHours("DataCorePlugin.GameRawData.Job.RemainingTime"));
+                    SetProp("Job.Minutes", Minutes("DataCorePlugin.GameRawData.Job.RemainingTime"));
 
-                    pluginManager.SetPropertyValue("Job.InProgress", this.GetType(), this.JobInProgress(pluginManager));
+                    SetProp("Navigation.TotalDaysLeft", TotalDays("DataCorePlugin.GameRawData.Job.NavigationTime"));
+                    SetProp("Navigation.TotalHoursLeft", TotalHours("DataCorePlugin.GameRawData.Job.NavigationTime"));
+                    SetProp("Navigation.Minutes", Minutes("DataCorePlugin.GameRawData.Job.NavigationTime"));
 
-                    pluginManager.SetPropertyValue("Job.TotalDaysLeft", this.GetType(), this.DaysLeft(pluginManager, "DataCorePlugin.GameRawData.Job.RemainingTime"));
-                    pluginManager.SetPropertyValue("Job.TotalHoursLeft", this.GetType(), this.HoursLeft(pluginManager, "DataCorePlugin.GameRawData.Job.RemainingTime"));
-                    pluginManager.SetPropertyValue("Job.Minutes", this.GetType(), this.Minutes(pluginManager, "DataCorePlugin.GameRawData.Job.RemainingTime"));
+                    SetProp("Drivetrain.EcoRange", EcoRange(data.NewData.Rpms));
 
-                    pluginManager.SetPropertyValue("Navigation.TotalDaysLeft", this.GetType(), this.DaysLeft(pluginManager, "DataCorePlugin.GameRawData.Job.NavigationTime"));
-                    pluginManager.SetPropertyValue("Navigation.TotalHoursLeft", this.GetType(), this.HoursLeft(pluginManager, "DataCorePlugin.GameRawData.Job.NavigationTime"));
-                    pluginManager.SetPropertyValue("Navigation.Minutes", this.GetType(), this.Minutes(pluginManager, "DataCorePlugin.GameRawData.Job.NavigationTime"));
+                    float WearAverage = WearAverageCalculation();
+                    if (WearAverage > 0 && WearAverage > (float)GetProp("TruckSimulatorPlugin.Damage.WearAverage"))
+                    {
+                        PluginManager.TriggerEvent("DamageIncrease", GetType());
+                    }
+                    SetProp("Damage.WearAverage", WearAverage);
+                    SetProp("Damage.WearWarning", WearAverage.CompareTo(Settings.WearWarningLevel) > 0);
 
-                    pluginManager.SetPropertyValue("Drivetrain.EcoRange", this.GetType(), this.EcoRange(data.NewData.Rpms));
+                    SetProp("Lights.HazardWarningOn", HazardWarningOn());
 
-                    float wearAverage = this.WearAverage(pluginManager);
-                    pluginManager.SetPropertyValue("Damage.WearAverage", this.GetType(), wearAverage);
-                    pluginManager.SetPropertyValue("Damage.WearWarning", this.GetType(), wearAverage > 5);
+                    SetProp("Engine.Starting", ((bool)GetProp("DataCorePlugin.GameRawData.Drivetrain.EngineEnabled")) == false && data.NewData.Rpms > 0);
 
-                    pluginManager.SetPropertyValue("Lights.HazardWarningActive", this.GetType(), this.HazardWarningLightsActive(pluginManager));
+                    // Loop all of the latches as they match property name, and set their values.
+                    foreach (var Data in Latches)
+                    {
+                        SetProp(Data.Key, TestLatch(Data.Key));
+                    }
                 }
             }
 
-            pluginManager.SetPropertyValue("Dash.DisplayUnitMetric", this.GetType(), Settings.DashUnitMetric);
+            SetProp("Dash.DisplayUnitMetric", Settings.DashUnitMetric);
         }
 
-        public string CurrentJobString = "";
-        public bool JobActive = false;
-        public bool SpeedLimitSeen = false;
-        public bool ZeroNavAndDistanceAtSet = false;
-        public DateTime ZeroNavAndDistanceAt;
+        public void End(PluginManager pluginManager) => this.SaveCommonSettings("TruckSimulatorPluginSettings", Settings);
+        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager) => new TruckSimulatorPluginSettingsControl(this);
 
-        public bool JobInProgress(PluginManager pluginManager)
+        private Dictionary<string, DateTime> Latches = new Dictionary<string, DateTime>();
+
+        private string CurrentJobString = "";
+        private bool JobActive = false;
+        private bool SpeedLimitSeen = false;
+        private bool ZeroNavAndDistanceAtSet = false;
+        private DateTime ZeroNavAndDistanceAt;
+
+        /// <summary>
+        /// Indicates whether you're currently working on a job or not.
+        /// </summary>
+        private bool JobInProgress()
         {
-            string currentJob = String.Format("{0}__{1}__{2}__{3}__{4}",
-                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.Cargo"),
-                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CompanySource"),
-                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CitySource"),
-                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CompanyDestination"),
-                (string)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.CityDestination")
-            ).Replace(" ", "-").Replace("________", "").ToLower();            
+            string CurrentJob = String.Format("{0}__{1}__{2}__{3}__{4}",
+                (string)GetProp("DataCorePlugin.GameRawData.Job.Cargo"),
+                (string)GetProp("DataCorePlugin.GameRawData.Job.CompanySource"),
+                (string)GetProp("DataCorePlugin.GameRawData.Job.CitySource"),
+                (string)GetProp("DataCorePlugin.GameRawData.Job.CompanyDestination"),
+                (string)GetProp("DataCorePlugin.GameRawData.Job.CityDestination")
+            ).Replace(" ", "-").Replace("________", "").ToLower();
 
-            if (currentJob == "")
+            if (CurrentJob == "")
             {
-                this.JobActive = false;
+                JobActive = false;
             }
 
-            if (this.CurrentJobString != currentJob)
+            if (CurrentJobString != CurrentJob)
             {
-                this.CurrentJobString = currentJob;
-                this.JobActive = true;
-                this.SpeedLimitSeen = false;
-                this.ZeroNavAndDistanceAtSet = false;
-                this.ZeroNavAndDistanceAt = DateTime.Now.AddYears(1); // Force the date out in the future so it'd never be true at job start // Force the date out in the future so it'd never be true at job start
+                CurrentJobString = CurrentJob;
+                JobActive = true;
+                SpeedLimitSeen = false;
+                ZeroNavAndDistanceAtSet = false;
+                ZeroNavAndDistanceAt = DateTime.Now.AddYears(1); // Force the date out in the future so it'd never be true at job start
+
+                PluginManager.TriggerEvent("JobStarted", GetType());
             }
 
-            if (this.JobActive)
+            if (JobActive)
             {
-                float speedLimit = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.SpeedLimit");
-                float navigationDistanceAndTimeLeft = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationDistanceLeft")
-                    + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.NavigationTimeLeft");
+                float speedLimit = (float)GetProp("DataCorePlugin.GameRawData.Job.SpeedLimit");
+                float navigationDistanceAndTimeLeft = (float)GetProp("DataCorePlugin.GameRawData.Job.NavigationDistanceLeft")
+                    + (float)GetProp("DataCorePlugin.GameRawData.Job.NavigationTimeLeft");
 
-                if (speedLimit > 0 && !this.SpeedLimitSeen)
+                if (speedLimit > 0 && !SpeedLimitSeen)
                 {
-                    this.SpeedLimitSeen = true;
-                }
-                
-                if (navigationDistanceAndTimeLeft.Equals(0) 
-                    && this.SpeedLimitSeen
-                )
-                {
-                    this.ZeroNavAndDistanceAt = DateTime.Now.AddSeconds(3);
-                    this.ZeroNavAndDistanceAtSet = true;
+                    SpeedLimitSeen = true;
                 }
 
-                if (navigationDistanceAndTimeLeft.Equals(0) 
-                    && this.ZeroNavAndDistanceAtSet
-                    && DateTime.Now.CompareTo(this.ZeroNavAndDistanceAt) > 0
+                if (navigationDistanceAndTimeLeft.Equals(0)
+                    && SpeedLimitSeen
                 )
                 {
-                    this.JobActive = false;
-                    this.SpeedLimitSeen = false;
-                    this.ZeroNavAndDistanceAtSet = false;
-                    this.ZeroNavAndDistanceAt = DateTime.Now.AddYears(1);
+                    ZeroNavAndDistanceAt = DateTime.Now.AddSeconds(3);
+                    ZeroNavAndDistanceAtSet = true;
+                }
+
+                if (navigationDistanceAndTimeLeft.Equals(0)
+                    && ZeroNavAndDistanceAtSet
+                    && DateTime.Now.CompareTo(ZeroNavAndDistanceAt) > 0
+                )
+                {
+                    JobActive = false;
+                    SpeedLimitSeen = false;
+                    ZeroNavAndDistanceAtSet = false;
+                    ZeroNavAndDistanceAt = DateTime.Now.AddYears(1);
+
+                    PluginManager.TriggerEvent("JobCompleted", GetType());
                 }
                 else if (navigationDistanceAndTimeLeft.CompareTo(0) > 0
-                    && this.ZeroNavAndDistanceAtSet
+                    && ZeroNavAndDistanceAtSet
                 )
                 {
-                    this.ZeroNavAndDistanceAt = DateTime.Now.AddYears(1); // Force the date out in the future so it'd never be true during job sat nav fluctuation
-                    this.ZeroNavAndDistanceAtSet = false;
+                    ZeroNavAndDistanceAt = DateTime.Now.AddYears(1);
+                    ZeroNavAndDistanceAtSet = false;
                 }
             }
 
-            return this.JobActive;
+            return JobActive;
         }
 
         /// <summary>
         /// Indicates whether you're currently speeding considering the current limit set on the road.
         /// Only works when the limit is greater than zero.
         /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <param name="overSpeedMargin"></param>
         /// <returns>bool</returns>
-        public bool OverSpeedLimit(PluginManager pluginManager, int overSpeedMargin)
+        private bool OverSpeedLimit()
         {
-            float speedLimit = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.SpeedLimitMph");
-            float currentSpeed = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Drivetrain.SpeedMph");
+            float speedLimit = (float)GetProp("DataCorePlugin.GameRawData.Job.SpeedLimitMph");
+            float currentSpeed = (float)GetProp("DataCorePlugin.GameRawData.Drivetrain.SpeedMph");
 
-            return speedLimit > 0 && currentSpeed > (speedLimit + overSpeedMargin);
+            return speedLimit > 0 && currentSpeed > (speedLimit + Settings.OverSpeedMargin);
         }
 
         /// <summary>
         /// When you're over the speed limit, this will return a percentage value indicating
-        /// how far over you are, taking current speed limit plus over speed margin as 100% over.
+        /// how far over you are, taking current speed limit + over speed margin as 100% over.
         /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>float</returns>
-        public float OverSpeedLimitPercentage(PluginManager pluginManager, int overSpeedMargin)
+        private float OverSpeedLimitPercentage()
         {
-            float speedLimit = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Job.SpeedLimitMph");
-            float currentSpeed = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Drivetrain.SpeedMph");
+            float speedLimit = (float)GetProp("DataCorePlugin.GameRawData.Job.SpeedLimitMph");
+            float currentSpeed = (float)GetProp("DataCorePlugin.GameRawData.Drivetrain.SpeedMph");
 
-            if (speedLimit > 0)
-            {
-                return this.InputAsPercentageOfRange(currentSpeed, speedLimit, speedLimit + overSpeedMargin);
+            return speedLimit > 0
+                ? InputAsPercentageOfRange(currentSpeed, speedLimit, speedLimit + Settings.OverSpeedMargin)
+                : 0;
+        }
+
+        /// <summary>
+        /// Are you currently within the eco range of the truck's RPM?
+        /// </summary>
+        /// <param name="Rpms">Current RPM of the vehicle</param>
+        private bool EcoRange(double Rpms)
+        {
+            var minRpms = 1000;
+            var maxRpms = 1400;
+
+            switch ((string)GetProp("DataCorePlugin.GameRawData.TruckId")) {
+                case "vehicle.volvo.fh16":
+                    minRpms = 1000;
+                    maxRpms = 1400;
+                    break;
             }
 
-            return 0;
-        }
-
-        /// <summary>
-        /// Are you currently within the econimical range of the truck's RPM?
-        /// </summary>
-        /// <param name="rpms"></param>
-        /// <returns>bool</returns>
-        public bool EcoRange(double rpms)
-        {
-            /// This may need tweaking, based on different trucks.
-            return rpms > 1000 && rpms < 1800;
-        }
-
-        /// <summary>
-        /// Return the total number of days remaining from a TimeSpan
-        /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>int</returns>
-        public int DaysLeft(PluginManager pluginManager, string property)
-        {
-            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue(property);
-
-            return (int)timeLeft.TotalDays;
-        }
-
-        /// <summary>
-        /// Return the total number of hours remaining from a TimeSpan
-        /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>int</returns>
-        public int HoursLeft(PluginManager pluginManager, string property)
-        {
-            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue(property);
-
-            return (int)timeLeft.TotalHours;
-        }
-
-        /// <summary>
-        /// Return the minutes component from a TimeSpan
-        /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>int</returns>
-        public int Minutes(PluginManager pluginManager, string property)
-        {
-            TimeSpan timeLeft = (TimeSpan)pluginManager.GetPropertyValue(property);
-
-            return (int)timeLeft.Minutes;
+            return Rpms > minRpms && Rpms < maxRpms;
         }
 
         /// <summary>
         /// The average of the wear across all connected parts of the truck.
         /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>float</returns>
-        public float WearAverage(PluginManager pluginManager)
+        private float WearAverageCalculation()
         {
-            float totalWear = (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Damage.WearCabin")
-                + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Damage.WearChassis")
-                + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Damage.WearEngine")
-                + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Damage.WearTrailer")
-                + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Damage.WearTransmission")
-                + (float)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Damage.WearWheels");
+            var totalWear = (float)GetProp("DataCorePlugin.GameRawData.Damage.WearCabin")
+             + (float)GetProp("DataCorePlugin.GameRawData.Damage.WearChassis")
+             + (float)GetProp("DataCorePlugin.GameRawData.Damage.WearEngine")
+             + (float)GetProp("DataCorePlugin.GameRawData.Damage.WearTrailer")
+             + (float)GetProp("DataCorePlugin.GameRawData.Damage.WearTransmission")
+             + (float)GetProp("DataCorePlugin.GameRawData.Damage.WearWheels");
 
             return (totalWear / 6) * 100;
         }
 
-        public DateTime HazardLightsOnAt;
-        public bool HazardLightsOn = false;
+        private DateTime HazardLightsOnAt;
+        private bool HazardLightsOn = false;
 
         /// <summary>
-        /// If both blinkers are 'on', then the hazards are on. This is a shortcut
-        /// to having to check both properties manually.
+        /// If both blinkers are on, then the hazards are on. We have to use the debounce
+        /// method, as BlinkerLeftActive / RightActive are false when hazards are on.
         /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>bool</returns>
-        public bool HazardWarningLightsActive(PluginManager pluginManager)
+        /// <returns>True if both blinkers are flashing and haven't stopped for more than a set time</returns>
+        private bool HazardWarningOn()
         {
-            DateTime now = DateTime.Now;
+            var now = DateTime.Now;
+            var blinkerLeftAndRightOn = (bool)GetProp("DataCorePlugin.GameRawData.Lights.BlinkerLeftOn")
+                && (bool)GetProp("DataCorePlugin.GameRawData.Lights.BlinkerRightOn");
 
-            bool switchedOn = (bool)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Lights.BlinkerLeftOn") &&
-                (bool)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Lights.BlinkerRightOn");
-
-            if (switchedOn)
+            if (blinkerLeftAndRightOn)
             {
-                this.HazardLightsOnAt = now;
-                this.HazardLightsOn = true;
+                HazardLightsOnAt = now;
+                HazardLightsOn = true;
             }
 
-            // If the lights are off longer than 1s after being "on", they've been turned off
-            if (switchedOn == false && now > this.HazardLightsOnAt.AddSeconds(1))
+            // We need both lights off for at least 1s to consider the hazards as off
+            if (!blinkerLeftAndRightOn && now > HazardLightsOnAt.AddSeconds(1))
             {
-                this.HazardLightsOn = false;
+                HazardLightsOn = false;
             }
 
-            return this.HazardLightsOn;
+            return HazardLightsOn;
         }
 
         /// <summary>
-        /// Indicates whether you have less than an "hour" remaining before you need to rest.
+        /// Indicates whether you have less than an hour remaining before you need to rest.
         /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns>bool</returns>
-        public bool NextRestWarning(PluginManager pluginManager)
-        {
-            TimeSpan nextRest = (TimeSpan)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.NextRestStopTime");
-
-            return nextRest.Hours < 1;
-        }
+        /// <returns>True if 1 hour or less remains</returns>
+        private bool NextRestWarning() => ((TimeSpan)GetProp("DataCorePlugin.GameRawData.NextRestStopTime")).Hours < 1;
 
         /// <summary>
-        /// Calculate the percentage of `input` based against `min` and `max` values
-        /// being 0-1 respectively.
+        /// Calculate input as a percentage of the range min->max.
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="min"></param>
-        /// <param name="max"></param>
-        /// <returns></returns>
-        private float InputAsPercentageOfRange(float input, float min, float max)
+        /// <param name="input">The value to convert to a percentage</param>
+        /// <param name="min">The minumum value where input would be equivalent 0%</param>
+        /// <param name="max">The maximum value where input would be equivalent 100%</param>
+        /// <returns>Float between 0-1 to represent 0-100%</returns>
+        private float InputAsPercentageOfRange(float input, float min, float max) => input > min && input < max ? (input - min) / (max - min) : input > max ? 1 : 0;
+
+        /// <summary>
+        /// Test the value of an entry in the Latches dict, to see if it has expired or not
+        /// </summary>
+        /// <param name="LatchName">The relevant key from the Latches dict to test</param>
+        /// <returns>True if the latch hasn't outlived its expiry date</returns>
+        private bool TestLatch(string LatchName) => Latches.TryGetValue(LatchName, out DateTime Expires) && DateTime.Now < Expires;
+
+        private void AddProp(string PropertyName, bool defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
+        private void AddProp(string PropertyName, int defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
+        private void AddProp(string PropertyName, string defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
+        private void AddProp(string PropertyName, TimeSpan defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
+        private void AddLatchProps(string BasePropertyName, int[] intervals)
         {
-            if (input > min && input < max)
+            for (int i = 0; i < intervals.Length; i++)
             {
-                return ((input - min) / (max - min));
+                AddProp(BasePropertyName + intervals[i].ToString() + "s", false);
             }
-
-            return input > max ? 1 : 0;
         }
 
-        /// <param name="pluginManager"></param>
-        public void End(PluginManager pluginManager)
+        private void SetLatch(string LatchName, DateTime ExpirationTime) => Latches[LatchName] = ExpirationTime;
+        private void SetLatchProps(string BasePropertyName, int[] intervals)
         {
-            this.SaveCommonSettings("TruckSimulatorPluginSettings", Settings);
-        }
-
-        /// <param name="pluginManager"></param>
-        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
-        {
-            /// @todo Make the settings configurable
-            return new TruckSimulatorPluginSettingsControl(this);
-        }
-
-        /// <param name="pluginManager"></param>
-        public void Init(PluginManager pluginManager)
-        {
-            Settings = this.ReadCommonSettings<TruckSimulatorPluginSettings>("TruckSimulatorPluginSettings", () => new TruckSimulatorPluginSettings());
-
-            // Additional job information
-            pluginManager.AddProperty("Job.NextRestWarning", this.GetType(), false);
-            pluginManager.AddProperty("Job.OverSpeedLimit", this.GetType(), false);
-            pluginManager.AddProperty("Job.OverSpeedLimitPercentage", this.GetType(), 0);
-
-            pluginManager.AddProperty("Job.TotalDaysLeft", this.GetType(), false);
-            pluginManager.AddProperty("Job.TotalHoursLeft", this.GetType(), false);
-            pluginManager.AddProperty("Job.Minutes", this.GetType(), false);
-
-            pluginManager.AddProperty("Job.InProgress", this.GetType(), false);
-
-            // Additional navigation information
-            pluginManager.AddProperty("Navigation.TotalDaysLeft", this.GetType(), false);
-            pluginManager.AddProperty("Navigation.TotalHoursLeft", this.GetType(), false);
-            pluginManager.AddProperty("Navigation.Minutes", this.GetType(), false);
-
-            // Additional truck information
-            pluginManager.AddProperty("Drivetrain.EcoRange", this.GetType(), false);
-            pluginManager.AddProperty("Damage.WearAverage", this.GetType(), 0);
-            pluginManager.AddProperty("Damage.WearWarning", this.GetType(), false);
-            pluginManager.AddProperty("Lights.HazardWarningActive", this.GetType(), false);
-
-            // Plugin information
-            pluginManager.AddProperty("Dash.DisplayUnitMetric", this.GetType(), false);
-
-            pluginManager.AddAction("SwitchDisplayUnit", this.GetType(), (a, b) =>
+            for (int i = 0; i < intervals.Length; i++)
             {
-                Settings.DashUnitMetric = !(bool)Settings.DashUnitMetric;
-            });
+                SetLatch(BasePropertyName + intervals[i].ToString() + "s", DateTime.Now.AddSeconds(intervals[i]));
+            }
         }
+
+        private void AddEvent(string EventName) => PluginManager.AddEvent(EventName, GetType());
+
+        private void SetProp(string PropertyName, bool value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+        private void SetProp(string PropertyName, float value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+        private void SetProp(string PropertyName, int value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+        private void SetProp(string PropertyName, string value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+        private void SetProp(string PropertyName, TimeSpan value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+
+        private object GetProp(string PropertyName) => PluginManager.GetPropertyValue(PropertyName);
+
+        private int TotalDays(string PropertyName) => (int)((TimeSpan)GetProp(PropertyName)).TotalDays;
+        private int TotalHours(string PropertyName) => (int)((TimeSpan)GetProp(PropertyName)).TotalHours;
+        private int Minutes(string PropertyName) => (int)((TimeSpan)GetProp(PropertyName)).Minutes;
     }
 }
