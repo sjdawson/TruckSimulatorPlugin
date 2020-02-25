@@ -38,6 +38,7 @@ namespace sjdawson.TruckSimulatorPlugin
 
             // Additional properties relating to vehicle attributes
             AddProp("Drivetrain.EcoRange", false);
+            AddProp("Drivetrain.FuelRangeStable", 0);
             AddProp("Damage.WearAverage", 0);
 
             AddProp("Damage.WearWarning", false);
@@ -60,6 +61,8 @@ namespace sjdawson.TruckSimulatorPlugin
             AddEvent("DamageIncrease");
         }
 
+        private float WearAverage = 0;
+
         /// <param name="pluginManager"></param>
         /// <param name="data"></param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
@@ -81,14 +84,16 @@ namespace sjdawson.TruckSimulatorPlugin
                     SetProp("Navigation.Minutes", Minutes("DataCorePlugin.GameRawData.Job.NavigationTime"));
 
                     SetProp("Drivetrain.EcoRange", EcoRange(data.NewData.Rpms));
+                    SetProp("Drivetrain.FuelRangeStable", FuelRangeStable());
 
-                    float WearAverage = WearAverageCalculation();
-                    if (WearAverage > 0 && WearAverage > (float)GetProp("TruckSimulatorPlugin.Damage.WearAverage"))
-                    {
+                    float WearAverageCalculationValue = WearAverageCalculation();
+                    if (WearAverageCalculationValue > WearAverage)
+                    { 
                         PluginManager.TriggerEvent("DamageIncrease", GetType());
                     }
-                    SetProp("Damage.WearAverage", WearAverage);
-                    SetProp("Damage.WearWarning", WearAverage.CompareTo(Settings.WearWarningLevel) > 0);
+                    WearAverage = WearAverageCalculationValue;
+                    SetProp("Damage.WearAverage", WearAverageCalculationValue);
+                    SetProp("Damage.WearWarning", WearAverageCalculationValue.CompareTo(Settings.WearWarningLevel) > 0);
 
                     SetProp("Lights.HazardWarningOn", HazardWarningOn());
 
@@ -111,10 +116,11 @@ namespace sjdawson.TruckSimulatorPlugin
         private Dictionary<string, DateTime> Latches = new Dictionary<string, DateTime>();
 
         private string CurrentJobString = "";
-        private bool JobActive = false;
-        private bool SpeedLimitSeen = false;
-        private bool ZeroNavAndDistanceAtSet = false;
-        private DateTime ZeroNavAndDistanceAt;
+        private bool IsJobActive = false;
+        private bool HasSeenSpeedLimitOverZero = false;
+        private bool IsNavAndDistanceAtZero = false;
+        private DateTime TimeNavAndDistancesAtZero;
+        private DateTime TimeBeforeNextJobCanBeActive = DateTime.Now;
 
         /// <summary>
         /// Indicates whether you're currently working on a job or not.
@@ -129,63 +135,98 @@ namespace sjdawson.TruckSimulatorPlugin
                 (string)GetProp("DataCorePlugin.GameRawData.Job.CityDestination")
             ).Replace(" ", "-").Replace("________", "").ToLower();
 
+            // If current job string is empty, then we're not on a job
+            // Returns early as there's nothing more to do here
             if (CurrentJob == "")
             {
-                JobActive = false;
+                IsJobActive = false;
+                return IsJobActive;
             }
 
-            if (CurrentJobString != CurrentJob)
+            // Since the last frame of data, CurrentJob has been populated
+            // and it doesn't match CurrentJobString. This is job starting
+            // Return early, next frame will go through the next if block
+            if (CurrentJobString != CurrentJob && IsJobActive != true && DateTime.Now > TimeBeforeNextJobCanBeActive)
             {
+                // Initialise the variables to this job
                 CurrentJobString = CurrentJob;
-                JobActive = true;
-                SpeedLimitSeen = false;
-                ZeroNavAndDistanceAtSet = false;
-                ZeroNavAndDistanceAt = DateTime.Now.AddYears(1); // Force the date out in the future so it'd never be true at job start
+                HasSeenSpeedLimitOverZero = false;
+                IsNavAndDistanceAtZero = false;
+                
+                // Force the date out in the future so it'd never be true at job start
+                TimeNavAndDistancesAtZero = DateTime.Now.AddYears(1);
 
                 PluginManager.TriggerEvent("JobStarted", GetType());
+                IsJobActive = true;
+                return IsJobActive;
             }
-
-            if (JobActive)
+            
+            // So, we're currently on an active job, let's keep checking
+            // for a game state that would suggest we've finished it
+            if (IsJobActive)
             {
-                float speedLimit = (float)GetProp("DataCorePlugin.GameRawData.Job.SpeedLimit");
-                float navigationDistanceAndTimeLeft = (float)GetProp("DataCorePlugin.GameRawData.Job.NavigationDistanceLeft")
-                    + (float)GetProp("DataCorePlugin.GameRawData.Job.NavigationTimeLeft");
+                bool SpeedLimitGreaterThanZero = ((float)GetProp("DataCorePlugin.GameRawData.Job.SpeedLimit")) > 0;
+                bool NavDistanceAndTimeEqualsZero = ((float)GetProp("DataCorePlugin.GameRawData.Job.NavigationDistanceLeft")
+                    + (float)GetProp("DataCorePlugin.GameRawData.Job.NavigationTimeLeft")) == 0;
 
-                if (speedLimit > 0 && !SpeedLimitSeen)
+                // Check that we've seen at least one speed limit and set a flag
+                // when it hasn't already been set
+                if (SpeedLimitGreaterThanZero && HasSeenSpeedLimitOverZero == false)
                 {
-                    SpeedLimitSeen = true;
+                    HasSeenSpeedLimitOverZero = true;
+                }
+                
+                // Navigation distance and time is 0, and we've seen a speed limit
+                // Set some flags to represent our new state
+                if (NavDistanceAndTimeEqualsZero && HasSeenSpeedLimitOverZero && IsNavAndDistanceAtZero == false)
+                {
+                    // A 2 second window before we can consider it complete
+                    // Allows for sat-nav rerouting blips as that drops these values to 0
+                    TimeNavAndDistancesAtZero = DateTime.Now.AddSeconds(2);
+                    IsNavAndDistanceAtZero = true;
                 }
 
-                if (navigationDistanceAndTimeLeft.Equals(0)
-                    && SpeedLimitSeen
-                )
+                // If we return to having nav distance or time, then it was
+                // likely a sat-nav blip, so reset the flags.
+                if (NavDistanceAndTimeEqualsZero == false && HasSeenSpeedLimitOverZero)
                 {
-                    ZeroNavAndDistanceAt = DateTime.Now.AddSeconds(3);
-                    ZeroNavAndDistanceAtSet = true;
+                    TimeNavAndDistancesAtZero = DateTime.Now.AddYears(1);
+                    IsNavAndDistanceAtZero = false;
                 }
 
-                if (navigationDistanceAndTimeLeft.Equals(0)
-                    && ZeroNavAndDistanceAtSet
-                    && DateTime.Now.CompareTo(ZeroNavAndDistanceAt) > 0
-                )
+                // We've seen the previous flags, and we've surpassed the 2 second
+                // period that allows for blips in rerouting
+                if (IsNavAndDistanceAtZero && DateTime.Now > TimeNavAndDistancesAtZero)
                 {
-                    JobActive = false;
-                    SpeedLimitSeen = false;
-                    ZeroNavAndDistanceAtSet = false;
-                    ZeroNavAndDistanceAt = DateTime.Now.AddYears(1);
+                    IsJobActive = false;
+                    HasSeenSpeedLimitOverZero = false;
+                    IsNavAndDistanceAtZero = false;
+                    TimeNavAndDistancesAtZero = DateTime.Now.AddYears(1);
 
                     PluginManager.TriggerEvent("JobCompleted", GetType());
-                }
-                else if (navigationDistanceAndTimeLeft.CompareTo(0) > 0
-                    && ZeroNavAndDistanceAtSet
-                )
-                {
-                    ZeroNavAndDistanceAt = DateTime.Now.AddYears(1);
-                    ZeroNavAndDistanceAtSet = false;
+                    TimeBeforeNextJobCanBeActive = DateTime.Now.AddSeconds(3);
                 }
             }
 
-            return JobActive;
+            return IsJobActive;
+        }
+
+        private float FuelRangeStableValue = 0;
+
+        /// <summary>
+        /// Maintains your fuel range indication to avoid dips to 0 constantly
+        /// </summary>
+        /// <returns>The current value of the property, or last known good if it's currently zero</returns>
+        private float FuelRangeStable()
+        {
+            var FuelRangeCurrentValue = (float)GetProp("DataCorePlugin.GameRawData.Drivetrain.FuelRange");
+
+            if (FuelRangeCurrentValue > 0)
+            {
+                FuelRangeStableValue = FuelRangeCurrentValue;
+            }
+
+            return FuelRangeStableValue;
         }
 
         /// <summary>
@@ -328,6 +369,7 @@ namespace sjdawson.TruckSimulatorPlugin
         private void SetProp(string PropertyName, int value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
         private void SetProp(string PropertyName, string value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
         private void SetProp(string PropertyName, TimeSpan value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+        private void SetProp(string PropertyName, DateTime value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
 
         private object GetProp(string PropertyName) => PluginManager.GetPropertyValue(PropertyName);
 
