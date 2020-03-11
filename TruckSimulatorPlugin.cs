@@ -1,4 +1,4 @@
-using GameReaderCommon;
+﻿using GameReaderCommon;
 using SimHub.Plugins;
 using System;
 using System.Linq;
@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace sjdawson.TruckSimulatorPlugin
 {
-    [PluginDescription("Additional properties, actions and events for use in truck simulators, ETS2 and ATS.")]
+    [PluginDescription("Additional properties, actions and events for use in ETS2.")]
     [PluginAuthor("sjdawson")]
     [PluginName("Truck Simulator Plugin")]
 
@@ -43,7 +43,7 @@ namespace sjdawson.TruckSimulatorPlugin
             AddProp("Job.L10N.CityDestination", "");
             AddProp("Job.L10N.CountrySource", "");
             AddProp("Job.L10N.CountryDestination", "");
-            
+
             // ASCII safe versions of these strings
             AddProp("Job.ASCII.CitySource", "");
             AddProp("Job.ASCII.CityDestination", "");
@@ -105,7 +105,7 @@ namespace sjdawson.TruckSimulatorPlugin
         /// <param name="data"></param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-            if (data.GameRunning && data.GameName == "ETS2" || data.GameName == "ATS")
+            if (data.GameRunning && data.GameName == "ETS2")
             {
                 if (data.OldData != null && data.NewData != null)
                 {
@@ -326,7 +326,7 @@ namespace sjdawson.TruckSimulatorPlugin
                         PluginManager.TriggerEvent("JobCompleted", GetType());
 
                         return;
-                    }   
+                    }
                 }
                 else
                 {

@@ -1,12 +1,12 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("sjdawson.TruckSimulatorPlugin")]
-[assembly: AssemblyDescription("Additional properties for use in truck simulators, ETS2 and ATS.")]
+[assembly: AssemblyDescription("Additional properties, events and actions for use in ETS2.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("sjdawson")]
 [assembly: AssemblyProduct("sjdawson.TruckSimulatorPlugin")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCopyright("Copyright © 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
