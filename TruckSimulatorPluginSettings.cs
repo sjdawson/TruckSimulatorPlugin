@@ -5,5 +5,6 @@
         public int OverSpeedMargin = 3;
         public int WearWarningLevel = 5;
         public bool DashUnitMetric = false;
+        public string LocalisationLanguage = "en_gb";
     }
 }

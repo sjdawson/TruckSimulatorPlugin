@@ -1,8 +1,10 @@
-﻿using GameReaderCommon;
+using GameReaderCommon;
 using SimHub.Plugins;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace sjdawson.TruckSimulatorPlugin
 {
@@ -14,6 +16,7 @@ namespace sjdawson.TruckSimulatorPlugin
     {
         public TruckSimulatorPluginSettings Settings;
         public PluginManager PluginManager { get; set; }
+        private Dictionary<string, TruckSimulatorPluginCity> Cities;
 
         /// <summary>
         /// Initialise the plugin preparing all settings, properties, events and triggers.
@@ -22,6 +25,8 @@ namespace sjdawson.TruckSimulatorPlugin
         public void Init(PluginManager pluginManager)
         {
             Settings = this.ReadCommonSettings<TruckSimulatorPluginSettings>("TruckSimulatorPluginSettings", () => new TruckSimulatorPluginSettings());
+
+            LoadCityLocalisations();
 
             // JOB
             AddProp("Job.InProgress", false);
@@ -32,6 +37,22 @@ namespace sjdawson.TruckSimulatorPlugin
             AddProp("Job.TotalDaysLeft", 0);
             AddProp("Job.TotalHoursLeft", 0);
             AddProp("Job.Minutes", 0);
+
+            // Localised versions of these strings
+            AddProp("Job.L10N.CitySource", "");
+            AddProp("Job.L10N.CityDestination", "");
+            AddProp("Job.L10N.CountrySource", "");
+            AddProp("Job.L10N.CountryDestination", "");
+            
+            // ASCII safe versions of these strings
+            AddProp("Job.ASCII.CitySource", "");
+            AddProp("Job.ASCII.CityDestination", "");
+
+            // Localised, ASCII safe versions of these strings
+            AddProp("Job.ASCII.L10N.CitySource", "");
+            AddProp("Job.ASCII.L10N.CityDestination", "");
+            AddProp("Job.ASCII.L10N.CountrySource", "");
+            AddProp("Job.ASCII.L10N.CountryDestination", "");
 
             // NAVIGATION
             AddProp("Navigation.TotalDaysLeft", 0);
@@ -93,11 +114,32 @@ namespace sjdawson.TruckSimulatorPlugin
                     SetProp("Job.OverSpeedLimitPercentage", OverSpeedLimitPercentage());
                     SetProp("Job.TotalDaysLeft", (int)((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.RemainingTime")).TotalDays);
                     SetProp("Job.TotalHoursLeft", (int)((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.RemainingTime")).TotalHours);
-                    SetProp("Job.Minutes", (int)((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.RemainingTime")).Minutes);
+                    SetProp("Job.Minutes", ((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.RemainingTime")).Minutes);
+
+                    Cities.TryGetValue((string)GetProp("DataCorePlugin.GameRawData.Job.CitySource"), out TruckSimulatorPluginCity CitySource);
+                    Cities.TryGetValue((string)GetProp("DataCorePlugin.GameRawData.Job.CityDestination"), out TruckSimulatorPluginCity CityDestination);
+
+                    if (CitySource != null)
+                    {
+                        SetProp("Job.L10N.CitySource", CitySource.translation);
+                        SetProp("Job.L10N.CountrySource", CitySource.country_translation);
+                        SetProp("Job.ASCII.CitySource", CitySource.api_ascii);
+                        SetProp("Job.ASCII.L10N.CitySource", CitySource.translation_ascii);
+                        SetProp("Job.ASCII.L10N.CountrySource", CitySource.country_translation_ascii);
+                    }
+
+                    if (CityDestination != null)
+                    {
+                        SetProp("Job.L10N.CityDestination", CityDestination.translation);
+                        SetProp("Job.L10N.CountryDestination", CityDestination.country_translation);
+                        SetProp("Job.ASCII.CityDestination", CityDestination.api_ascii);
+                        SetProp("Job.ASCII.L10N.CityDestination", CityDestination.translation_ascii);
+                        SetProp("Job.ASCII.L10N.CountryDestination", CityDestination.country_translation_ascii);
+                    }
 
                     SetProp("Navigation.TotalDaysLeft", (int)((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.NavigationTime")).TotalDays);
                     SetProp("Navigation.TotalHoursLeft", (int)((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.NavigationTime")).TotalHours);
-                    SetProp("Navigation.Minutes", (int)((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.NavigationTime")).Minutes);
+                    SetProp("Navigation.Minutes", ((TimeSpan)GetProp("DataCorePlugin.GameRawData.Job.NavigationTime")).Minutes);
 
                     SetProp("Drivetrain.EcoRange", EcoRange(data.NewData.Rpms));
                     SetProp("Drivetrain.FuelRangeStable", FuelRangeStable());
@@ -440,6 +482,7 @@ namespace sjdawson.TruckSimulatorPlugin
 
         private void AddProp(string PropertyName, bool defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
         private void AddProp(string PropertyName, int defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
+        private void AddProp(string PropertyName, string defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
 
         private void AddEvent(string EventName) => PluginManager.AddEvent(EventName, GetType());
 
@@ -449,5 +492,12 @@ namespace sjdawson.TruckSimulatorPlugin
         private void SetProp(string PropertyName, string value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
 
         private object GetProp(string PropertyName) => PluginManager.GetPropertyValue(PropertyName);
+
+        public void LoadCityLocalisations()
+        {
+            string LangFile = File.ReadAllText(PluginManager.GetGameStoragePath() + "/sjdawson.TruckSimulatorPlugin.Translations/" + Settings.LocalisationLanguage + ".json");
+            Cities = JsonConvert.DeserializeObject<Dictionary<string, TruckSimulatorPluginCity>>(LangFile);
+            SimHub.Logging.Current.Info(String.Format("Loaded \"{0}\" localisations into memory", Settings.LocalisationLanguage));
+        }
     }
 }
