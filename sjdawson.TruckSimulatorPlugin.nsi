@@ -1,5 +1,5 @@
 !define PRODUCT_NAME "sjdawson.TruckSimulatorPlugin"
-!define PRODUCT_VERSION "1.1.8"
+!define PRODUCT_VERSION "v1.1.8"
 !define PRODUCT_PUBLISHER "sjdawson"
 !define PRODUCT_WEB_SITE "https://github.com/sjdawson/trucksimulatorplugin"
 
@@ -16,8 +16,8 @@ SetCompressor lzma
 !define MUI_ABORTWARNING
 !define MUI_ICON "bin/Release/assets/truck.ico"
 !define MUI_WELCOMEPAGE_TITLE "${PRODUCT_NAME} Setup"
-!define MUI_WELCOMEPAGE_TEXT "Welcome to the setup of ${PRODUCT_NAME}, ${PRODUCT_VERSION} for SimHub"
-!define MUI_FINISHPAGE_TITLE "${PRODUCT_NAME} Setup Complete"
+!define MUI_WELCOMEPAGE_TEXT "Welcome to the setup of ${PRODUCT_NAME} ${PRODUCT_VERSION} for SimHub."
+!define MUI_FINISHPAGE_TITLE "Setup complete for ${PRODUCT_NAME}"
 !define MUI_FINISHPAGE_TEXT "Setup has finished installing ${PRODUCT_NAME}, you'll need to restart SimHub if it's currently running in order to have it pick up that the plugin has been installed."
 !define MUI_DIRECTORYPAGE_TEXT_DESTINATION "Choose your SimHub folder (where SimHubWPF.exe is located)."
 
