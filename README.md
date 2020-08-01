@@ -6,6 +6,10 @@ This plugin for [SimHub](https://www.simhubdash.com/) adds multiple new properti
 
 ## Changelog
 
+### 2.0.0
+
+- This is a maintenance release, that refactors the underlying code to be more maintainable going forward. As a part of this, some properties have been renamed.
+
 ### 1.1.8
 
 - Added localisation for the cities that are available in the ETS2 base game

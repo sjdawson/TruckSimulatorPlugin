@@ -13,22 +13,40 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="46"/>
+            <RowDefinition Height="36"/>
             <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="36"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="300"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Over speed margin" />
-        <Custom:NumericUpDown x:Name="OverSpeedMargin" HasDecimals="False" Margin="10" ValueChanged="OverSpeedMarginChanged" Grid.Column="1" Minimum="-10" Maximum="10"/>
-        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Display dash units in metric?" Grid.Row="1" />
-        <CheckBox x:Name="DashUnitMetric" Click="DashSpeedUnitMetric_Click" Grid.Column="1" HorizontalAlignment="Left" Height="25" Margin="10" Grid.Row="1" VerticalAlignment="Top"/>
-        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Wear warning value" Grid.Row="2" />
-        <Custom:NumericUpDown x:Name="WearWarning" HasDecimals="False" Margin="10" ValueChanged="WearWarningChanged" Grid.Column="1" Grid.Row="2" Minimum="0" Maximum="100"/>
-        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" Margin="10" Text="Localisation language" Grid.Row="3" />
-        <ComboBox x:Name="LocalisationLanguage" SelectionChanged="LocalisationLanguageChanged" Margin="10" Grid.Column="1" Grid.Row="3"
+
+        <TextBlock Text="LOCALISATION" FontSize="16" FontWeight="Bold" Grid.ColumnSpan="2" Margin="20,20,0,0"/>
+
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Text="Localisation language" Grid.Row="1" Width="180" />
+        <ComboBox x:Name="LocalisationLanguage" SelectionChanged="LocalisationLanguageChanged" Margin="5" Grid.Column="1" Grid.Row="1"
+                  Width="300" HorizontalAlignment="Right"
                   ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value"/>
+
+        <TextBlock Text="SETTINGS" FontSize="16" FontWeight="Bold" Grid.ColumnSpan="2" Grid.Row="2" Margin="20,20,0,0"/>
+
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Text="Over speed margin" Grid.Row="3" />
+        <Custom:NumericUpDown x:Name="OverSpeedMargin" HasDecimals="False" Margin="5" ValueChanged="OverSpeedMarginChanged" Grid.Row="3"
+                              ToolTip="The value at which the plugin will start calculating speeding properties"
+                              Width="300" HorizontalAlignment="Right"
+                              Grid.Column="1" Minimum="-10" Maximum="10"/>
+
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Text="Wear warning value" Grid.Row="4" />
+        <Custom:NumericUpDown x:Name="WearWarning" HasDecimals="False" Margin="5" ValueChanged="WearWarningChanged" Grid.Row="4"
+                              Width="300" HorizontalAlignment="Right"
+                              Grid.Column="1" Minimum="0" Maximum="100"/>
+
+        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Text="Display dash units in metric?" Grid.Row="5" />
+        <CheckBox x:Name="DashUnitMetric" Click="DashSpeedUnitMetric_Click" Grid.Column="1" HorizontalAlignment="Right" Grid.Row="5"
+                  Width="300" 
+                  Height="25" Margin="5" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>

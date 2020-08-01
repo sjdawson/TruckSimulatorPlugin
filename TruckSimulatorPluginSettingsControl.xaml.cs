@@ -78,7 +78,7 @@ namespace sjdawson.TruckSimulatorPlugin
         public void LocalisationLanguageChanged(object sender, SelectionChangedEventArgs e)
         {
             Plugin.Settings.LocalisationLanguage = (string)LocalisationLanguage.SelectedValue;
-            Plugin.LoadCityLocalisations();
+            Plugin.Localisation.LoadCityLocalisations();
         }
 
         public void DashSpeedUnitMetric_Click(object sender, RoutedEventArgs e)
