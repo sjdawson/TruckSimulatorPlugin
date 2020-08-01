@@ -1,5 +1,5 @@
 !define PRODUCT_NAME "sjdawson.TruckSimulatorPlugin"
-!define PRODUCT_VERSION "v1.1.8"
+!define PRODUCT_VERSION "v2.0.1"
 !define PRODUCT_PUBLISHER "sjdawson"
 !define PRODUCT_WEB_SITE "https://github.com/sjdawson/trucksimulatorplugin"
 
@@ -48,7 +48,7 @@ ShowInstDetails show
 Section "MainSection" SEC01
   SetOutPath $INSTDIR
   SetOverwrite ifnewer
-  File "bin\Release\sjdawson.TruckSimulatorPlugin.dll"
+  File "..\..\sjdawson.TruckSimulatorPlugin.dll"
   SetOutPath "$INSTDIR\PluginsData\ETS2\sjdawson.TruckSimulatorPlugin.Translations\"
   File "..\..\PluginsData\ETS2\sjdawson.TruckSimulatorPlugin.Translations\zh_tw.json"
   File "..\..\PluginsData\ETS2\sjdawson.TruckSimulatorPlugin.Translations\zh_cn.json"
