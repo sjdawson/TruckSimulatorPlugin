@@ -1,10 +1,16 @@
 # TruckSimulatorPlugin for SimHub
 
-This plugin for [SimHub](https://www.simhubdash.com/) adds multiple new properties, events and actions for Euro Truck Simulator 2.
+This plugin for [SimHub](https://www.simhubdash.com/) adds multiple new properties, events and actions for Euro Truck Simulator 2 and American Truck Simulator.
 
 ---
 
 ## Changelog
+
+### 2.0.2
+
+- Restored functionality for ATS. 
+    - Localisation properties are disabled in ATS.
+    - GearDashboard may report incorrectly in ATS, as the trucks don't have the same limitations as ETS2.
 
 ### 2.0.1
 

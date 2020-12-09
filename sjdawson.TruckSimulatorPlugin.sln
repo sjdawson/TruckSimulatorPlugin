@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DE4138F2-ED76-4675-B216-F47144E9B27F}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		sjdawson.TruckSimulatorPlugin.nsi = sjdawson.TruckSimulatorPlugin.nsi
 	EndProjectSection
 EndProject
 Global

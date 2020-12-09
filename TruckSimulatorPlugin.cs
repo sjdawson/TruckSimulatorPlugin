@@ -4,7 +4,7 @@ using System;
 
 namespace sjdawson.TruckSimulatorPlugin
 {
-    [PluginDescription("Additional properties, actions and events for use in ETS2.")]
+    [PluginDescription("Additional properties, actions and events for use in ETS2 and ATS.")]
     [PluginAuthor("sjdawson")]
     [PluginName("Truck Simulator Plugin")]
 
@@ -49,7 +49,7 @@ namespace sjdawson.TruckSimulatorPlugin
             // We always want to be updating these properties, as they're game agnostic.
             Dashboard.DataUpdate();
 
-            if (data.GameRunning && data.GameName == "ETS2")
+            if (data.GameRunning && data.GameName == "ETS2" || data.GameName == "ATS")
             {
                 if (data.OldData != null && data.NewData != null)
                 {
@@ -59,8 +59,13 @@ namespace sjdawson.TruckSimulatorPlugin
                     JobStatus.DataUpdate();
                     Job.DataUpdate();
                     Lights.DataUpdate();
-                    Localisation.DataUpdate();
                     Navigation.DataUpdate();
+
+                    // These items are currently specific to ETS2 and won't work in ATS
+                    if (data.GameName == "ETS2")
+                    {
+                        Localisation.DataUpdate();
+                    }
                 }
             }
         }

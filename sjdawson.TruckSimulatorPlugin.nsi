@@ -1,5 +1,5 @@
 !define PRODUCT_NAME "sjdawson.TruckSimulatorPlugin"
-!define PRODUCT_VERSION "v2.0.1"
+!define PRODUCT_VERSION "v2.0.2"
 !define PRODUCT_PUBLISHER "sjdawson"
 !define PRODUCT_WEB_SITE "https://github.com/sjdawson/trucksimulatorplugin"
 
