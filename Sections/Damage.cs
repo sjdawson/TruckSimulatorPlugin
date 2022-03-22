@@ -1,10 +1,12 @@
-﻿namespace sjdawson.TruckSimulatorPlugin.Sections
+﻿using System.Linq;
+
+namespace sjdawson.TruckSimulatorPlugin.Sections
 {
     public class Damage
     {
         private readonly TruckSimulatorPlugin Base;
 
-        private float WearAverage;
+        private float Average;
 
         public Damage(TruckSimulatorPlugin truckSimulatorPlugin)
         {
@@ -18,29 +20,30 @@
 
         public void DataUpdate()
         {
-            var WearAverageCalculationValue = WearAverageCalculation();
+            var AverageCalculationValue = WearAverageCalculation();
 
-            if (WearAverageCalculationValue > WearAverage) Base.TriggerEvent("DamageIncrease");
+            if (AverageCalculationValue > Average) Base.TriggerEvent("DamageIncrease");
 
-            WearAverage = WearAverageCalculationValue;
-                       
-            Base.SetProp("Damage.WearAverage", WearAverageCalculationValue);
-            Base.SetProp("Damage.WearWarning", WearAverageCalculationValue > Base.Settings.WearWarningLevel);
+            Average = AverageCalculationValue;
+
+            Base.SetProp("Damage.WearWarning", AverageCalculationValue > Base.Settings.WearWarningLevel);
+            Base.SetProp("Damage.WearAverage", AverageCalculationValue);
         }
 
         /// <summary>
-        /// The average of wear across all connected parts of the truck and trailer.
+        /// The average damage across all connected parts of the truck.
         /// </summary>
         private float WearAverageCalculation()
         {
-            var totalWear = (float)Base.GetProp("Damage.WearCabin")
-             + (float)Base.GetProp("Damage.WearChassis")
-             + (float)Base.GetProp("Damage.WearEngine")
-             + (float)Base.GetProp("Damage.WearTrailer")
-             + (float)Base.GetProp("Damage.WearTransmission")
-             + (float)Base.GetProp("Damage.WearWheels");
+            float[] totalWear = {
+                (float)Base.GetProp("TruckValues.CurrentValues.DamageValues.Cabin"),
+                (float)Base.GetProp("TruckValues.CurrentValues.DamageValues.Chassis"),
+                (float)Base.GetProp("TruckValues.CurrentValues.DamageValues.Engine"),
+                (float)Base.GetProp("TruckValues.CurrentValues.DamageValues.Transmission"),
+                (float)Base.GetProp("TruckValues.CurrentValues.DamageValues.WheelsAvg"),
+            };
 
-            return (totalWear / 6) * 100;
+            return totalWear.Sum() / totalWear.Length * 100;
         }
     }
 }

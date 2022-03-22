@@ -8,6 +8,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         private readonly TruckSimulatorPlugin Base;
 
         private float FuelRangeStableValue;
+        private float FuelAverageConsumption;
 
         public Drivetrain(TruckSimulatorPlugin truckSimulatorPlugin)
         {
@@ -15,13 +16,25 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
 
             Base.AddProp("Drivetrain.EcoRange", false);
             Base.AddProp("Drivetrain.FuelRangeStable", 0);
+            Base.AddProp("Drivetrain.FuelValue.AverageConsumptionLitresPer100Mile", 0);
+            Base.AddProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUK", 0);
+            Base.AddProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUS", 0);
             Base.AddProp("Drivetrain.GearDashboard", 0);
         }
 
         public void DataUpdate(ref GameData data)
         {
+            var FuelAverageConsumptionCurrentValue = (float)Base.GetProp("TruckValues.CurrentValues.DashboardValues.FuelValue.AverageConsumption");
+
+            FuelAverageConsumption = FuelAverageConsumptionCurrentValue > 0
+                ? FuelAverageConsumptionCurrentValue
+                : FuelAverageConsumption;
+
             Base.SetProp("Drivetrain.EcoRange", EcoRange(data.NewData.Rpms));
             Base.SetProp("Drivetrain.FuelRangeStable", FuelRangeStable());
+            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionLitresPer100Mile", AverageConsumptionLitresPer100Mile());
+            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUK", AverageConsumptionMilesPerGallonUK());
+            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUS", AverageConsumptionMilesPerGallonUS());
             Base.SetProp("Drivetrain.GearDashboard", DrivetrainGearDashboardWithCrawler());
         }
 
@@ -32,11 +45,26 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         {
             var FuelRangeCurrentValue = (float)Base.GetProp("Drivetrain.FuelRange");
 
-            FuelRangeStableValue = FuelRangeCurrentValue > 0 
-                ? FuelRangeCurrentValue 
+            FuelRangeStableValue = FuelRangeCurrentValue > 0
+                ? FuelRangeCurrentValue
                 : FuelRangeStableValue;
 
             return FuelRangeStableValue;
+        }
+
+        private float AverageConsumptionLitresPer100Mile()
+        {
+            return FuelAverageConsumption * (float)160.9344;
+        }
+
+        private float AverageConsumptionMilesPerGallonUK()
+        {
+            return FuelAverageConsumption * (float)2.824809363;
+        }
+
+        private float AverageConsumptionMilesPerGallonUS()
+        {
+            return FuelAverageConsumption * (float)2.352145833;
         }
 
         /// <summary>

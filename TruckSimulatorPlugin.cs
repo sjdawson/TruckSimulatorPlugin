@@ -84,7 +84,8 @@ namespace sjdawson.TruckSimulatorPlugin
 
         public void AddProp(string PropertyName, dynamic defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
         public void SetProp(string PropertyName, dynamic value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
-        public dynamic GetProp(string PropertyName) => PluginManager.GetPropertyValue("DataCorePlugin.GameRawData."+PropertyName);
+        public dynamic GetProp(string PropertyName) => PluginManager.GetPropertyValue("DataCorePlugin.GameRawData." + PropertyName);
+        public bool HasProp(string PropertyName) => PluginManager.GetAllPropertiesNames().Contains("DataCorePlugin.GameRawData." + PropertyName);
      
         public void AddEvent(string EventName) => PluginManager.AddEvent(EventName, GetType());
         public void TriggerEvent(string EventName) => PluginManager.TriggerEvent(EventName, GetType());

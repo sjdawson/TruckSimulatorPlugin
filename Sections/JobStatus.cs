@@ -11,7 +11,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         private bool HasSeenSpeedLimit, HasBeenCloseToDestination, HasNavigationDistanceZeroSet, HasNavigationDistanceJumped;
         private DateTime LatchStatusUntil = DateTime.Now, NavigationDistanceLastZeroedAt;
         private string CurrentJobIdentifier;
-        
+
         private float NavigationDistancePreviousFrame;
         private List<float> NavigationDistancePreviousFrames = new List<float>() { 0 };
 
@@ -42,7 +42,20 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
             CalculateNavigationDistanceFrames();
 
             Base.SetProp("Job.Status", CurrentStatus);
-            Base.SetProp("Job.InProgress", InProgressStatuses.Contains(CurrentStatus));
+            Base.SetProp("Job.InProgress", InProgress());
+        }
+
+        /**
+         * @deprecated: Use `SpecialEventsValues.OnJob` natively instead.
+         */
+        private bool InProgress()
+        {
+            if (Base.HasProp("SpecialEventsValues.OnJob"))
+            {
+                return Base.GetProp("SpecialEventsValues.OnJob");
+            }
+
+            return InProgressStatuses.Contains(CurrentStatus);
         }
 
         private void JobStatusUpdate()
