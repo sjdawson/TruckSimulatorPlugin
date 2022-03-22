@@ -32,9 +32,9 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
 
             Base.SetProp("Drivetrain.EcoRange", EcoRange(data.NewData.Rpms));
             Base.SetProp("Drivetrain.FuelRangeStable", FuelRangeStable());
-            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionLitresPer100Mile", AverageConsumptionLitresPer100Mile());
-            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUK", AverageConsumptionMilesPerGallonUK());
-            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUS", AverageConsumptionMilesPerGallonUS());
+            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionLitresPer100Mile", FuelAverageConsumption * (float)160.9344);
+            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUK", FuelAverageConsumption * (float)2.824809363);
+            Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUS", FuelAverageConsumption * (float)2.352145833);
             Base.SetProp("Drivetrain.GearDashboard", DrivetrainGearDashboardWithCrawler());
         }
 
@@ -50,21 +50,6 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
                 : FuelRangeStableValue;
 
             return FuelRangeStableValue;
-        }
-
-        private float AverageConsumptionLitresPer100Mile()
-        {
-            return FuelAverageConsumption * (float)160.9344;
-        }
-
-        private float AverageConsumptionMilesPerGallonUK()
-        {
-            return FuelAverageConsumption * (float)2.824809363;
-        }
-
-        private float AverageConsumptionMilesPerGallonUS()
-        {
-            return FuelAverageConsumption * (float)2.352145833;
         }
 
         /// <summary>

@@ -4,9 +4,9 @@ using System;
 
 namespace sjdawson.TruckSimulatorPlugin
 {
+    [PluginName("Truck Simulator Plugin")]
     [PluginDescription("Additional properties, actions and events for use in ETS2 and ATS.")]
     [PluginAuthor("sjdawson")]
-    [PluginName("Truck Simulator Plugin")]
 
     public class TruckSimulatorPlugin: IPlugin, IDataPlugin, IWPFSettings
     {
@@ -22,7 +22,7 @@ namespace sjdawson.TruckSimulatorPlugin
         public Sections.Lights Lights;
         public Sections.Localisation Localisation;
         public Sections.Navigation Navigation;
-        
+
         /// <summary>
         /// Initialise the plugin preparing all settings, properties, events and triggers.
         /// </summary>
@@ -86,7 +86,7 @@ namespace sjdawson.TruckSimulatorPlugin
         public void SetProp(string PropertyName, dynamic value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
         public dynamic GetProp(string PropertyName) => PluginManager.GetPropertyValue("DataCorePlugin.GameRawData." + PropertyName);
         public bool HasProp(string PropertyName) => PluginManager.GetAllPropertiesNames().Contains("DataCorePlugin.GameRawData." + PropertyName);
-     
+
         public void AddEvent(string EventName) => PluginManager.AddEvent(EventName, GetType());
         public void TriggerEvent(string EventName) => PluginManager.TriggerEvent(EventName, GetType());
 
