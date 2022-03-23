@@ -1,3 +1,5 @@
+Unicode True
+
 !define PRODUCT_NAME "sjdawson.TruckSimulatorPlugin"
 !define PRODUCT_VERSION "v2.0.3"
 !define PRODUCT_PUBLISHER "sjdawson"
