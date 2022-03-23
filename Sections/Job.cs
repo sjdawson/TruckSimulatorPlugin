@@ -14,9 +14,9 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
             Base.AddProp("Job.OverSpeedLimitPercentage", 0);
 
             Base.AddProp("Job.NextRestWarning", false);
-            Base.AddProp("Job.TotalDaysLeft", 0);
-            Base.AddProp("Job.TotalHoursLeft", 0);
-            Base.AddProp("Job.Minutes", 0);
+            Base.AddProp("Job.RemainingDeliveryTime.Time.Days", 0);
+            Base.AddProp("Job.RemainingDeliveryTime.Time.Hours", 0);
+            Base.AddProp("Job.RemainingDeliveryTime.Time.Minutes", 0);
         }
 
         public void DataUpdate()
@@ -26,10 +26,10 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
                         
             Base.SetProp("Job.NextRestWarning", ((TimeSpan)Base.GetProp("NextRestStopTime")).Hours < 1);
 
-            var RemainingTime = (TimeSpan)Base.GetProp("Job.RemainingTime");
-            Base.SetProp("Job.TotalDaysLeft", RemainingTime.Days);
-            Base.SetProp("Job.TotalHoursLeft", RemainingTime.Hours);
-            Base.SetProp("Job.Minutes", RemainingTime.Minutes);
+            var RemainingTime = (TimeSpan)Base.GetProp("JobValues.RemainingDeliveryTime.Time");
+            Base.SetProp("Job.RemainingDeliveryTime.Time.Days", RemainingTime.Days);
+            Base.SetProp("Job.RemainingDeliveryTime.Time.Hours", RemainingTime.Hours);
+            Base.SetProp("Job.RemainingDeliveryTime.Time.Minutes", RemainingTime.Minutes);
         }
 
         /// <summary>
