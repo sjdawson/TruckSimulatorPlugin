@@ -17,7 +17,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
 
         public void DataUpdate()
         {
-            var NavigationTime = (TimeSpan)Base.GetProp("Job.NavigationTime");
+            var NavigationTime = (TimeSpan)Base.GetProp("NavigationValues.NavigationTime");
             Base.SetProp("Navigation.TotalDaysLeft", NavigationTime.Days);
             Base.SetProp("Navigation.TotalHoursLeft", NavigationTime.Hours);
             Base.SetProp("Navigation.Minutes", NavigationTime.Minutes);

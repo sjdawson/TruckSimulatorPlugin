@@ -29,7 +29,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         private bool HazardWarningOn()
         {
             var now = DateTime.Now;
-            var bothBlinkersAreOn = (bool)Base.GetProp("Lights.BlinkerLeftOn") && (bool)Base.GetProp("Lights.BlinkerRightOn");
+            var bothBlinkersAreOn = (bool)Base.GetProp("TruckValues.CurrentValues.LightsValues.BlinkerLeftOn") && (bool)Base.GetProp("TruckValues.CurrentValues.LightsValues.BlinkerRightOn");
 
             if (bothBlinkersAreOn)
             {

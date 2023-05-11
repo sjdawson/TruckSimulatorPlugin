@@ -61,11 +61,11 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         private void JobStatusUpdate()
         {
             var CurrentJob = String.Format("{0}__{1}__{2}__{3}__{4}",
-                (string)Base.GetProp("Job.Cargo"),
-                (string)Base.GetProp("Job.CompanySource"),
-                (string)Base.GetProp("Job.CitySource"),
-                (string)Base.GetProp("Job.CompanyDestination"),
-                (string)Base.GetProp("Job.CityDestination")
+                (string)Base.GetProp("JobValues.CargoValues.Id"),
+                (string)Base.GetProp("JobValues.CompanySourceId"),
+                (string)Base.GetProp("JobValues.CitySourceId"),
+                (string)Base.GetProp("JobValues.CompanyDestinationId"),
+                (string)Base.GetProp("JobValues.CityDestinationId")
             ).Replace(" ", "-").Replace("________", "").ToLower();
 
             if (CurrentJob == "")
@@ -74,7 +74,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
                 return;
             }
 
-            var NavDistanceLeft = (float)Base.GetProp("Job.NavigationDistanceLeft");
+            var NavDistanceLeft = (float)Base.GetProp("NavigationValues.NavigationDistance");
 
             if (NavDistanceLeft == 0 && HasNavigationDistanceZeroSet == false)
             {
@@ -89,7 +89,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
             }
 
             var NavEnded = HasNavigationDistanceZeroSet && DateTime.Now > NavigationDistanceLastZeroedAt;
-            var SpeedLimit = (float)Base.GetProp("Job.SpeedLimit");
+            var SpeedLimit = (float)Base.GetProp("NavigationValues.SpeedLimit.Value");
 
             if (CurrentStatus == Status.None && CurrentJob != CurrentJobIdentifier && DateTime.Now > LatchStatusUntil)
             {

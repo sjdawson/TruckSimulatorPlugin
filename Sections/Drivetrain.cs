@@ -43,7 +43,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         /// </summary>
         private float FuelRangeStable()
         {
-            var FuelRangeCurrentValue = (float)Base.GetProp("Drivetrain.FuelRange");
+            var FuelRangeCurrentValue = (float)Base.GetProp("TruckValues.CurrentValues.DashboardValues.FuelValue.Range");
 
             FuelRangeStableValue = FuelRangeCurrentValue > 0
                 ? FuelRangeCurrentValue
@@ -63,7 +63,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
             var minRpm = 1000;
             var maxRpm = 1400;
 
-            switch ((string)Base.GetProp("TruckId"))
+            switch ((string)Base.GetProp("TruckValues.ConstantsValues.Id"))
             {
                 case "vehicle.volvo.fh16":
                     minRpm = 1000;
@@ -82,8 +82,8 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         /// </summary>
         private string DrivetrainGearDashboardWithCrawler()
         {
-            var GearDashboard = (int)Base.GetProp("Drivetrain.GearDashboard");
-            var GearsForward = (int)Base.GetProp("Drivetrain.GearsForward");
+            var GearDashboard = (int)Base.GetProp("TruckValues.CurrentValues.DashboardValues.GearDashboards");
+            var GearsForward = (int)Base.GetProp("TruckValues.ConstantsValues.MotorValues.ForwardGearCount");
 
             if (GearsForward == 14) // 12+2 transmission
             {

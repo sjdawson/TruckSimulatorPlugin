@@ -37,8 +37,8 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         {
             if (Base.PluginManager.GameName == "ETS2")
             {
-                Cities.TryGetValue((string)Base.GetProp("Job.CitySource"), out TruckSimulatorPluginCity CitySource);
-                Cities.TryGetValue((string)Base.GetProp("Job.CityDestination"), out TruckSimulatorPluginCity CityDestination);
+                Cities.TryGetValue((string)Base.GetProp("JobValues.CitySource"), out TruckSimulatorPluginCity CitySource);
+                Cities.TryGetValue((string)Base.GetProp("JobValues.CityDestination"), out TruckSimulatorPluginCity CityDestination);
 
                 if (CitySource != null)
                 {

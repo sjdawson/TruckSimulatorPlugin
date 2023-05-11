@@ -24,7 +24,7 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
             Base.SetProp("Job.OverSpeedLimit", OverSpeedLimit());
             Base.SetProp("Job.OverSpeedLimitPercentage", OverSpeedLimitPercentage());
                         
-            Base.SetProp("Job.NextRestWarning", ((TimeSpan)Base.GetProp("NextRestStopTime")).Hours < 1);
+            Base.SetProp("Job.NextRestWarning", ((TimeSpan)Base.GetProp("CommonValues.NextRestStop.Time")).Hours < 1);
 
             var RemainingTime = (TimeSpan)Base.GetProp("JobValues.RemainingDeliveryTime.Time");
             Base.SetProp("Job.RemainingDeliveryTime.Time.Days", RemainingTime.Days);
