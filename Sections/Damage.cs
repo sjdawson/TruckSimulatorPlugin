@@ -22,7 +22,8 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         {
             var AverageCalculationValue = WearAverageCalculation();
 
-            if (AverageCalculationValue > Average) Base.TriggerEvent("DamageIncrease");
+            // Trigger the event if we take a greater hit than 1% of damage
+            if (AverageCalculationValue > (Average + 1)) Base.TriggerEvent("DamageIncrease");
 
             Average = AverageCalculationValue;
 
