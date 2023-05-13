@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>sjdawson.TruckSimulatorPlugin</RootNamespace>
     <AssemblyName>sjdawson.TruckSimulatorPlugin</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -49,8 +49,7 @@
       <HintPath>..\..\..\..\..\..\..\..\..\Program Files (x86)\SimHub\MahApps.Metro.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -86,7 +85,7 @@
     <Compile Include="Sections\Drivetrain.cs" />
     <Compile Include="Sections\Lights.cs" />
     <Compile Include="Sections\Dashboard.cs" />
-    <Compile Include="TruckSimulatorPluginCity.cs" />
+    <Compile Include="Models\TruckSimulatorPluginCity.cs" />
     <Compile Include="TruckSimulatorPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TruckSimulatorPluginSettings.cs" />
@@ -106,10 +105,10 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <Compile Include="Sections\Damage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Sections\Damage.cs" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
