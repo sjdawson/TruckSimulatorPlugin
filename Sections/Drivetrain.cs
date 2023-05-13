@@ -1,5 +1,7 @@
 ﻿using GameReaderCommon;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace sjdawson.TruckSimulatorPlugin.Sections
 {
@@ -10,11 +12,27 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         private float FuelRangeStableValue;
         private float FuelAverageConsumption;
 
+        // Only trucks with custom torque curves are set here, otherwise the fall to the 1000->1300 default the game uses.
+        private Dictionary<string, ArrayList> PeakTorqueMap = new Dictionary<string, ArrayList>()
+        {
+            { "vehicle.man.tgx_euro6", new ArrayList() { 1000, 1400 } },
+            { "vehicle.mercedes.actros", new ArrayList() { 1000, 1400 } },
+            { "vehicle.mercedes.actros2014", new ArrayList() { 1000, 1200 } },
+            { "vehicle.renault.t", new ArrayList() { 1000, 1400 } },
+            { "vehicle.scania.r_2016", new ArrayList () { 1000, 1300 } },
+        };
+
+        private int PeakTorqueMinDefault = 1000;
+        private int PeakTorqueMaxDefault = 1300;
+
         public Drivetrain(TruckSimulatorPlugin truckSimulatorPlugin)
         {
             Base = truckSimulatorPlugin;
 
-            Base.AddProp("Drivetrain.EcoRange", false);
+            Base.AddProp("Drivetrain.PeakTorque", false);
+            Base.AddProp("Drivetrain.PeakTorque.Min", 0);
+            Base.AddProp("Drivetrain.PeakTorque.Max", 0);
+
             Base.AddProp("Drivetrain.FuelRangeStable", 0);
             Base.AddProp("Drivetrain.FuelValue.AverageConsumptionLitresPer100Mile", 0);
             Base.AddProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUK", 0);
@@ -29,8 +47,22 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
             FuelAverageConsumption = FuelAverageConsumptionCurrentValue > 0
                 ? FuelAverageConsumptionCurrentValue
                 : FuelAverageConsumption;
+                        
+            PeakTorqueMap.TryGetValue((string)Base.GetProp("TruckValues.ConstantsValues.Id"), out ArrayList PeakTorqueValues);
 
-            Base.SetProp("Drivetrain.EcoRange", EcoRange(data.NewData.Rpms));
+            if (PeakTorqueValues == null)
+            {
+                Base.SetProp("Drivetrain.PeakTorque", IsPeakTorque(data.NewData.Rpms, PeakTorqueMinDefault, PeakTorqueMaxDefault));
+                Base.SetProp("Drivetrain.PeakTorque.Min", PeakTorqueMinDefault);
+                Base.SetProp("Drivetrain.PeakTorque.Max", PeakTorqueMaxDefault);
+            }
+            else
+            {
+                Base.SetProp("Drivetrain.PeakTorque", IsPeakTorque(data.NewData.Rpms, (int)PeakTorqueValues[0], (int)PeakTorqueValues[1]));
+                Base.SetProp("Drivetrain.PeakTorque.Min", (int)PeakTorqueValues[0]);
+                Base.SetProp("Drivetrain.PeakTorque.Max", (int)PeakTorqueValues[1]);
+            }
+
             Base.SetProp("Drivetrain.FuelRangeStable", FuelRangeStable());
             Base.SetProp("Drivetrain.FuelValue.AverageConsumptionLitresPer100Mile", FuelAverageConsumption * (float)160.9344);
             Base.SetProp("Drivetrain.FuelValue.AverageConsumptionMilesPerGallonUK", FuelAverageConsumption * (float)2.824809363);
@@ -53,25 +85,14 @@ namespace sjdawson.TruckSimulatorPlugin.Sections
         }
 
         /// <summary>
-        /// Are you currently within the eco range of the truck's RPM? Given
+        /// Are you currently within the peak torque range of the truck's RPM? Given
         /// the limited data returned by the SDK, the best we can do for this
         /// attribute is base it on reported statistics of each base truck, and
         /// not their upgrades.
         /// </summary>
-        private bool EcoRange(double CurrentRpm)
+        private bool IsPeakTorque(double CurrentRpm, int PeakTorqueMin, int PeakTorqueMax)
         {
-            var minRpm = 1000;
-            var maxRpm = 1400;
-
-            switch ((string)Base.GetProp("TruckValues.ConstantsValues.Id"))
-            {
-                case "vehicle.volvo.fh16":
-                    minRpm = 1000;
-                    maxRpm = 1400;
-                    break;
-            }
-
-            return CurrentRpm >= minRpm && CurrentRpm <= maxRpm;
+            return CurrentRpm >= PeakTorqueMin && CurrentRpm <= PeakTorqueMax;
         }
 
         /// <summary>
